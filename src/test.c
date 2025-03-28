@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #define Z_STRING_IMPLEMENTATION
-#include "zstring.h"
+#include "include/zstring.h"
 
 int main() { 
 

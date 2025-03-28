@@ -1,3 +1,3 @@
 cls 
-gcc -o test.exe test.c
+gcc -o test.exe ./src/test.c
 .\test.exe
