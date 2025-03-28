@@ -1,4 +1,4 @@
-/* zstring.h - v1.0.0 - MIT License - https://github.com/zb1ndev/zstring.h 
+/* zstring.h - v1.1.0 - MIT License - https://github.com/zb1ndev/zstring.h 
 
     MIT License
     Copyright (c) 2025 Joel Zbinden
@@ -21,10 +21,17 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
+
+    Version 1.1 Change-Log :
+    - Added string_split.
+    - Added string_insert.
+    - Removed string_append_n.
+    - Added string_append_format.
+
 */
 
-#if !defined(STRING_H)
-#define STRING_H
+#if !defined( Z_STRING_H)
+#define  Z_STRING_H
 
     #include <stdlib.h> // realloc
     #include <string.h> // memcpy
@@ -38,6 +45,8 @@
 
     } string;
 
+    // String Createion
+
     /** A function that initializes a string structure with a value.
      * @param src The value you want the result to be initialized with.
      * @returns A string with the provided value as it's content.
@@ -48,9 +57,11 @@
      * @param format The format in which you want your string to be formed.
      * @param __VA_ARGS__ The items specifified by the specifiers in ```format```.
      * @returns A string with the provided format as it's content.
-     * @note Implemented specifiers : ```%s```, ```%d```.
+     * @note Implemented specifiers : ```%%```, ```%s```, ```%d```, ```%u```.
      */
     string string_from_format(const char* format, ...);
+
+    // String Manipulation
 
     /** A function that appends a value to a string.
      * @param ptr The string you to append to.
@@ -59,20 +70,19 @@
      */
     int string_append(string* ptr, char* src); 
 
+    /** A macro that appends a formated value to a string.
+     * @param format The format in which you want your string to be formed.
+     * @param __VA_ARGS__ The items specifified by the specifiers in ```format```.
+     * @returns Whether the macro has succeded ```0 = success```.
+     */
+    #define string_append_format(ptr, format, ...) string_append(ptr, string_from_format(format, __VA_ARGS__).content)
+
     /** A function that appends a character to a string.
      * @param ptr The string you to append to.
      * @param src The character you want to append.
      * @returns Whether the function has succeded ```0 = success```.
      */
     int string_append_c(string* ptr, char src);
-
-    /** A function that appends a value to a string.
-     * @param ptr The string you to append to.
-     * @param n The number of strings you want to append.
-     * @param src The value you want to append.
-     * @returns Whether the function has succeded ```0 = success```.
-     */
-    int string_append_n(string* ptr, size_t n, ...);
 
     /** A function that removes the spaces from a string.
      * @param ptr The string you want to trim.
@@ -115,7 +125,40 @@
      */
     string string_tokenize(string* ptr, char* delimiters); 
 
-    /** A function that turns an integer into a string.
+    /** A function that flips the string around.
+     * @param ptr The string you want to flip.
+     */
+    void string_flip(string* ptr);
+    
+    /** A function that frees the contents of a string.
+     * @param ptr The string you want to free.
+     */
+    void string_drop(string* ptr);
+
+    /** A function that splits the string in two at ```index```. Puts left half in ```return``` and right half in ```ptr```.
+     * @param ptr The string you want to split.
+     * @param index The index you want to split at.
+     * @returns The left half of the string.
+     */
+    string string_split(string* ptr, size_t index);
+
+    /** A function inserts ```src``` into ```ptr``` at ```index```.
+     * @param ptr The string you want to insert into.
+     * @param src The string you want to insert.
+     * @param index The index you want to insert to.
+     * @returns Whether the function has succeded ```0 = success```.
+     */
+    void string_insert(string* ptr, char* src, size_t index);
+
+    // Utilities
+
+    /** A function that gets the length of a null terminated c-string.
+     * @param str The string you want to check to length of.
+     * @returns The length of the string provided.
+     */
+    size_t c_strlen(const char *str);
+
+     /** A function that turns an integer into a string.
      * @param number The number you want to turn into a string.
      * @returns ```number``` as a string.
      */
@@ -127,24 +170,10 @@
      */
     string uint_to_string(size_t number);
 
-    /** A function that flips the string around.
-     * @param ptr The string you want to flip.
-     */
-    void string_flip(string* ptr);
-    
-    /** A function that frees the contents of a string.
-     * @param ptr The string you want to free.
-     */
-    void string_drop(string* ptr);
-
-    /** A function that gets the length of a null terminated c-string.
-     * @param str The string you want to check to length of.
-     * @returns The length of the string provided.
-     */
-    size_t c_strlen(const char *str);
-
 #if defined(Z_STRING_IMPLEMENTATION)
     
+#pragma region String Creation
+
     string string_from(char* src) {
 
         string return_value = { 0 };
@@ -189,6 +218,9 @@
 
     }
     
+#pragma endregion
+#pragma region String Manipulation
+
     int string_append(string* ptr, char* src) {
         
         size_t src_length = c_strlen(src);
@@ -218,18 +250,6 @@
 
         ptr->content[(ptr->length += 1) - 1] = src;
         ptr->content[ptr->length] = '\0';
-
-        return 0;
-        
-    }
-
-    int string_append_n(string* ptr, size_t n, ...) {
-
-        va_list args;
-        va_start(args, n);  
-        for (int i = 0; i < n; i++)
-            string_append(ptr, va_arg(args, char*));        
-        va_end(args); 
 
         return 0;
         
@@ -278,6 +298,10 @@
 
     string string_from_until(char* ptr, size_t index) {
 
+        if (index >= c_strlen(ptr)) {
+            return string_from(ptr);
+        }
+
         char* buffer = (char*)malloc(index+1);
 
         for (size_t i = 0; i < index+1; i++)
@@ -320,7 +344,59 @@
         return return_value;
 
     }
-    
+
+    void string_flip(string* ptr) {
+
+        for (int j = 0, k = ptr->length - 1; j < k; j++, k--) {
+            char temp = ptr->content[j];
+            ptr->content[j] = ptr->content[k];
+            ptr->content[k] = temp;
+        }
+
+    }
+
+    string string_split(string* ptr, size_t index) {
+
+        if (index == 0)
+            return string_from("");
+
+        if (index >= ptr->length) {
+            string return_value = string_from(ptr->content); 
+            ptr->content = ptr->content + ptr->length;
+            return return_value;
+        }
+
+        string return_value = string_from_until(ptr->content, index-1);
+        ptr->content = ptr->content+index;
+
+        return return_value;
+
+    }
+
+    void string_insert(string* ptr, char* src, size_t index) {
+
+        string left = string_split(ptr, index);
+        string result = string_from_format("%s%s%s", left.content, src, ptr->content);
+        *ptr = result;
+
+    }
+
+#pragma endregion
+#pragma region Utilities
+
+    void string_drop(string* ptr) {
+        if (ptr->content)
+            free(ptr->content);
+    }
+
+    size_t c_strlen(const char *str) {
+
+        const char *_p = str;
+        while (*_p) _p++;
+        return _p - str;
+
+    }
+
     string int_to_string(ssize_t number) {
 
         string return_value = string_from("");
@@ -354,28 +430,7 @@
 
     }
 
-    void string_flip(string* ptr) {
-
-        for (int j = 0, k = ptr->length - 1; j < k; j++, k--) {
-            char temp = ptr->content[j];
-            ptr->content[j] = ptr->content[k];
-            ptr->content[k] = temp;
-        }
-
-    }
-
-    void string_drop(string* ptr) {
-        if (ptr->content)
-            free(ptr->content);
-    }
-
-    size_t c_strlen(const char *str) {
-
-        const char *_p = str;
-        while (*_p) _p++;
-        return _p - str;
-
-    }
+#pragma endregion
 
 #endif
 #endif
