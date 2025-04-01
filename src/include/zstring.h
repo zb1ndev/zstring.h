@@ -33,6 +33,14 @@
 
 */
 
+/* Goal for zstring.h :
+    - Add string_remove() : Has option for delimiters
+    - Add string_remove_c()
+    - Add float_to_string() / format for floats/doubles
+    - Add string_compare_cstr()
+    - Add string_contains() : Has option for delimiters
+*/
+
 #if !defined(Z_STRING_H)
 #define  Z_STRING_H
 
@@ -119,7 +127,7 @@
      * @param delimiter The character you want check for.
      * @returns Whether the ```delimiter``` occurs or not.
      */
-    int string_has_char(String* ptr, char delimiter);
+    int string_contains_c(String* ptr, char delimiter);
 
     /** A function that tokenizes a string.
      * @param ptr The String you want to tokenize, this value is set as the content after the delimiter.
@@ -315,7 +323,7 @@
 
     }
 
-    int string_has_char(String* ptr, char delimiter) {
+    int string_contains_c(String* ptr, char delimiter) {
 
         for (size_t c = 0; c < ptr->length; c++)
             if (ptr->content[c] == delimiter)
@@ -333,7 +341,7 @@
         printf("%s\n", delimiters_as_string.content);
 
         for (size_t c = 0; c < ptr->length; c++) {
-            if (string_has_char(&delimiters_as_string, ptr->content[c]) == 0) {
+            if (string_contains_c(&delimiters_as_string, ptr->content[c]) == 0) {
                 index = c;
                 break;
             }
