@@ -56,7 +56,7 @@
 
     } String;
 
-    // String Createion
+    // String Creation
 
     /** A function that initializes a String structure with a value.
      * @param src The value you want the result to be initialized with.
