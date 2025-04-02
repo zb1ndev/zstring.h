@@ -1,4 +1,4 @@
-/* zstring.h - v1.1.1 - MIT License - https://github.com/zb1ndev/zstring.h 
+/* zstring.h - v1.2.1 - MIT License - https://github.com/zb1ndev/zstring.h 
 
     MIT License
     Copyright (c) 2025 Joel Zbinden
@@ -31,22 +31,22 @@
     Version 1.1.1 Change-Log :
     - string -> String
 
-*/
-
-/* Goal for zstring.h :
-    - Add string_remove() : Has option for delimiters
+    Version 1.2.1 Change-Log :
+    - Add string_remove()
     - Add string_remove_c()
-    - Add float_to_string() / format for floats/doubles
+    - Add float_to_string()
     - Add string_compare_cstr()
-    - Add string_contains() : Has option for delimiters
+    - Add string_contains()
+
 */
 
 #if !defined(Z_STRING_H)
 #define  Z_STRING_H
 
-    #include <stdlib.h> // realloc
-    #include <string.h> // memcpy
-    #include <stdarg.h> // va_args
+    #include <stdlib.h>     // realloc
+    #include <string.h>     // memcpy
+    #include <stdarg.h>     // va_args
+    #include <sys/types.h>  // ssize_t
     
     typedef struct String {
         
@@ -55,6 +55,8 @@
         size_t capacity;
 
     } String;
+
+    #define Z_STRING_FLOATING_ACCURACY 6
 
     // String Creation
 
@@ -127,7 +129,7 @@
      * @param delimiter The character you want check for.
      * @returns Whether the ```delimiter``` occurs or not.
      */
-    int string_contains_c(String* ptr, char delimiter);
+    int string_contains_c(String* ptr, char* del);
 
     /** A function that tokenizes a string.
      * @param ptr The String you want to tokenize, this value is set as the content after the delimiter.
@@ -161,6 +163,35 @@
      */
     void string_insert(String* ptr, char* src, size_t index);
 
+    /** A function that removes ```rem``` from ```ptr```.
+     * @param ptr The String you want to remove a string from.
+     * @param rem The String you want to remove.
+     * @param del A list of delimiters.
+     */
+    void string_remove(String* ptr, char* rem, char* del);
+
+    /** A function that removes ```rem``` from ```ptr```.
+     * @param ptr The String you want to remove a char from.
+     * @param rem The character you want to remove.
+     * @param num The number of characters you want to remove.
+     */
+    void string_remove_c(String* ptr, char rem, size_t num);
+
+    /** A function that compares a ```String``` to a c-string ```char*```.
+     * @param ptr The string you want to compare.
+     * @param str The c-string you want to compare.
+     * @returns ```0``` on success and ```-1``` on failure. 
+    */
+    int string_compare_cstr(String* ptr, char* str);
+
+    /** A function that checks if ```ptr``` contains ```str``` with delimiters.
+     * @param ptr The string you want to check in.
+     * @param str The string you want to check for.
+     * @param del The delimiters.
+     * @returns The index of the first ```char``` on success and ```-1``` on failure. 
+    */
+    ssize_t string_contains(String* ptr, char* str, char* del);
+
     // Utilities
 
     /** A function that gets the length of a null terminated c-string.
@@ -180,6 +211,18 @@
      * @returns ```number``` as a string.
      */
     String uint_to_string(size_t number);
+
+    /** A function that turns a float into a string.
+     * @param number The number you want to turn into a string.
+     * @returns ```number``` as a string.
+     */
+    String float_to_string(long double number);
+
+    /** A function that checks if a char is in ```del```.
+     * @param number The char you want to check for.
+     * @returns ```0``` on success and ```-1``` on failure.
+     */
+    int char_is_del(char chr, char* del);
 
 #if defined(Z_STRING_IMPLEMENTATION)
     
@@ -215,6 +258,9 @@
                             break;
                         case 'u':
                             string_append(&return_value, uint_to_string(va_arg(args, ssize_t)).content);
+                            break;
+                        case 'f':
+                            string_append(&return_value, float_to_string(va_arg(args, long double)).content);
                             break;
                         default:
                             break;
@@ -323,12 +369,14 @@
 
     }
 
-    int string_contains_c(String* ptr, char delimiter) {
+    int string_contains_c(String* ptr, char* del) {
 
+        size_t size = c_strlen(del);
         for (size_t c = 0; c < ptr->length; c++)
-            if (ptr->content[c] == delimiter)
-                return 0;
-
+            for (size_t d = 0; d < size; d++) {
+                if (ptr->content[c] == del[d])
+                    return 0;
+            }
         return -1;
 
     }
@@ -338,14 +386,13 @@
         ssize_t index = -1;
         String delimiters_as_string = string_from(delimiters);
 
-        printf("%s\n", delimiters_as_string.content);
-
         for (size_t c = 0; c < ptr->length; c++) {
-            if (string_contains_c(&delimiters_as_string, ptr->content[c]) == 0) {
+            if (string_contains_c(&delimiters_as_string, &ptr->content[c]) == 0) {
                 index = c;
                 break;
             }
         }
+
         if (index < 0 || index >= ptr->length) 
             return string_from(ptr->content);
 
@@ -389,6 +436,80 @@
         String left = string_split(ptr, index);
         String result = string_from_format("%s%s%s", left.content, src, ptr->content);
         *ptr = result;
+
+    }
+
+    void string_remove(String* ptr, char* rem, char* del) {
+
+        ssize_t index = string_contains(ptr, rem, del);
+        while (index != -1) {
+
+            String left = string_from_until(ptr->content, index-1);
+            String right = string_from(ptr->content + (c_strlen(rem) + index));
+            string_append(&left, right.content);
+
+            *ptr = left;
+            index = string_contains(ptr, rem, del);
+
+        }
+        
+    }
+
+    void string_remove_c(String* ptr, char rem, size_t num) {
+
+        size_t counter = 0;
+        ssize_t index = string_index_of(ptr, rem);
+        while (index != -1) {
+
+            if (counter++ == num)
+                break;
+            
+            String left = string_from_until(ptr->content, index-1);
+            String right = string_from(ptr->content + (index + 1));
+            string_append(&left, right.content);
+
+            *ptr = left;
+            index = string_index_of(ptr, rem);
+
+        }
+
+    }
+
+    int string_compare_cstr(String* ptr, char* str) {
+        
+        size_t length = c_strlen(str);
+        if (ptr->length != length)
+            return -1;
+    
+        for (size_t c = 0; c < length; c++)
+            if (ptr->content[c] != str[c])
+                return -1;
+            
+        return 0;
+
+    }
+
+    ssize_t string_contains(String* ptr, char* str, char* del) {
+
+        size_t str_len = c_strlen(str);
+        size_t del_len = c_strlen(del);
+
+        for (int i = 0; i < ptr->length; i++) {
+            if (ptr->content[i] == str[0]) {
+
+                String s = string_from_until((ptr->content + i), str_len-1);
+                int d = string_compare_cstr(&s, str);
+
+                if (del_len > 0 && d == 0 && char_is_del(ptr->content[i+(str_len)], del) == 0)                    
+                    return d;
+
+                if (d == 0 && del_len == 0)
+                    return i;
+            
+            }
+        } 
+
+        return -1;
 
     }
 
@@ -438,6 +559,42 @@
         string_flip(&return_value);
         
         return return_value;
+
+    }
+
+    String float_to_string(long double number) {
+
+        String result = string_from("");
+        if (number< 0) {
+            number = -number;
+            string_append_c(&result, '-');  
+        }
+
+        int integer_part = (int)number;
+        float fractional_part = number - integer_part;
+        string_append(&result, int_to_string(integer_part).content);
+        string_append_c(&result, '.');
+
+        int count = 0;
+        while (count < Z_STRING_FLOATING_ACCURACY) {
+            fractional_part *= 10;
+            int digit = (int)fractional_part;
+            string_append_c(&result, digit + '0');
+            fractional_part -= digit;
+            count++;
+        }
+
+        return result;
+                    
+    }
+
+    int char_is_del(char chr, char* del) {
+        
+        size_t del_len = c_strlen(del);
+        for (size_t i = 0; i < del_len; i++)
+            if (chr == del[i])
+                return 0;
+        return -1;
 
     }
 
