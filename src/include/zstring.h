@@ -46,7 +46,8 @@
     #include <stdlib.h>     // realloc
     #include <string.h>     // memcpy
     #include <stdarg.h>     // va_args
-    #include <sys/types.h>  // ssize_t
+    '
+    #define ssize_t signed long
     
     typedef struct String {
         
