@@ -291,7 +291,7 @@
             ptr->capacity += (src_length * 2);
     
         char* temp = (char*)realloc(ptr->content, ptr->capacity); 
-        if (ptr->content == NULL) return 1;
+        if (temp == NULL) return 1;
         ptr->content = temp;
 
         memcpy(ptr->content + ptr->length, src, src_length);

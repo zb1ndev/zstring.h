@@ -89,7 +89,8 @@
 
 int main() { 
 
-    
+    String s = string_from("asfasf");
+    printf("%s\n", s.content);
 
     return 0; 
 
