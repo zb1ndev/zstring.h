@@ -1,4 +1,4 @@
-/* zstring.h - v1.2.1 - MIT License - https://github.com/zb1ndev/zstring.h 
+/* zstring.h - v1.2.2 - MIT License - https://github.com/zb1ndev/zstring.h 
 
     MIT License
     Copyright (c) 2025 Joel Zbinden
@@ -37,6 +37,9 @@
     - Add float_to_string()
     - Add string_compare_cstr()
     - Add string_contains()
+    
+    Version 1.2.2 Change-Log :
+    - Minor Safety Improvements
 
 */
 
@@ -287,8 +290,9 @@
         if (new_length > ptr->capacity)
             ptr->capacity += (src_length * 2);
     
-        ptr->content = (char*)realloc(ptr->content, ptr->capacity); 
+        char* temp = (char*)realloc(ptr->content, ptr->capacity); 
         if (ptr->content == NULL) return 1;
+        ptr->content = temp;
 
         memcpy(ptr->content + ptr->length, src, src_length);
         ptr->content[(ptr->length += src_length)] = '\0';
@@ -315,6 +319,8 @@
     String* string_trim(String* ptr) {
 
         char* buffer = (char*)malloc(ptr->length);
+        if (buffer == NULL) return NULL;
+
         size_t l = 0;
         for (size_t c = 0; c < ptr->length; c++)
             if (ptr->content[c] != ' ') 
@@ -419,8 +425,10 @@
             return string_from("");
 
         if (index >= ptr->length) {
+            String ptr_value = string_from(ptr->content + ptr->length);
             String return_value = string_from(ptr->content); 
-            ptr->content = ptr->content + ptr->length;
+            
+            *ptr = ptr_value;
             return return_value;
         }
 
@@ -459,6 +467,7 @@
 
         size_t counter = 0;
         ssize_t index = string_index_of(ptr, rem);
+        
         while (index != -1) {
 
             if (counter++ == num)
@@ -519,6 +528,7 @@
     void string_drop(String* ptr) {
         if (ptr->content)
             free(ptr->content);
+        ptr->content = NULL;
     }
 
     size_t c_strlen(const char *str) {
