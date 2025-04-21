@@ -1,97 +1,72 @@
 #include <stdio.h>
+#include <string.h>
 
 #define Z_STRING_IMPLEMENTATION
 #include "include/zstring.h"
 
-#pragma region Todo
+#define start_test(message) printf("[TEST] %s... ", message)
+#define check_test(value, expected) printf("[%s] : %s\n", ((strcmp(value, expected) == 0) ? "PASS" : "FAIL"), value)
 
-    struct TodoItems {
+int main(void) { 
 
-        String* items;
-        size_t length;
-        size_t capacity;
+    start_test("Create string from C string");
+    String from = string_from("Hello World");
+    check_test(from.content, "Hello World");
 
-    };
+    /* Needs Fixing - maybe definition order? */
+    // start_test("Create string from format");
+    // String from_format = string_from_format("%%, %s, %d, %u, %f", "Hello World", (int)69, (unsigned int)420, 0.5f);
+    // check_test(from_format.content, "%, Hello World, 69, 420, 0.5");
 
-    int todo_append(struct TodoItems* ptr, String src) {
+    // string_drop(&from_format);
 
-        if (src.length <= 0)        
-            return 0;
-        
-        if (ptr->length++ >= ptr->capacity)
-            ptr->capacity += (ptr->length * 2);
+    /* Needs Fixing - maybe definition order? */
+    start_test("Create string from C string, until index");
+    String from_untill = string_from_until("Hello World", 3);
+    check_test(from.content, "Hello");
+    string_drop(&from_untill);
 
-        ptr->items = (String*)realloc(ptr->items, sizeof(String) * ptr->capacity);
-        if (ptr->items == NULL)
-            return 1;   
+    start_test("Append C string to string");
+    string_append(&from, ", Hol");
+    check_test(from.content, "Hello World, Hol");
 
-        ptr->items[ptr->length-1] = src;
+    start_test("Append char to string");
+    string_append_c(&from, 'a');
+    check_test(from.content, "Hello World, Hola");
 
-        return 0;
-        
-    }
+    start_test("Trim the string");
+    string_trim(&from);
+    check_test(from.content, "HelloWorld,Hola");
 
-    int todo_remove(struct TodoItems* ptr, int index) {
+    /* Needs Fixing - maybe definition order? */
+    // start_test("Tokenize the string");
+    // String token = string_tokenize(&from, "W");
+    // check_test(token.content, "Hello");
 
-        if (index >= ptr->length) {
-            printf("[ERROR] Cant remove index, does not exist\n");
-            return 1;
-        }
+    start_test("Flip the string");
+    string_flip(&from);
+    check_test(from.content, "aloH,dlroWolleH");
 
-        for (size_t i = 0, j = 0; i < ptr->length; i++) {
-            if (i == index) j++;
-            ptr->items[i] =  ptr->items[i+j];
-        }
+    /* Needs Fixing - maybe definition order? */
+    start_test("Split the string");
+    String lh = string_split(&from, 4);
+    check_test(lh.content, "aloH");
+    string_drop(&lh);
 
-        ptr->length--;
-        return 0;
+    /* Needs Fixing - maybe definition order? */
+    start_test("Insert a c string into a string at index");
+    string_insert(&from, "( :-) )", 3);
+    check_test(from.content, ",dl( :-) )roWolleH");
 
-    }
+    start_test("Remove a c string from a string");
+    string_remove(&from, "( :-) )", "");
+    check_test(from.content, ",dlroWolleH");
 
-    void Todo() {
+    start_test("Remove a character from a string");
+    string_remove_c(&from, 'l', 2);
+    check_test(from.content, ",droWoleH");
 
-        struct TodoItems todo_list = (struct TodoItems){ 0 };
-        
-        char buffer[1024];
-        unsigned char quit = 0;
-
-        while (quit == 0) {
-            
-            printf("\n ---- TODO LIST ---- \n");
-            for (size_t i = 0; i < todo_list.length; i++)
-                printf("%ld : %s", i, todo_list.items[i].content);
-
-            printf("\nadd | remove | quit\n>> ");
-            String s = string_from(fgets(buffer, 100, stdin));
-
-            if (strcmp(s.content, "quit\n") == 0) {
-                string_drop(&s);
-                break;
-            }
-            
-            if (strcmp(s.content, "add\n") == 0) {
-                printf("%ld >> ", todo_list.length);
-                todo_append(&todo_list, string_from(fgets(buffer, 100, stdin)));
-            }
-
-            else if (strcmp(s.content, "remove\n") == 0) {
-                printf("Enter the index >> ");
-                todo_remove(&todo_list, atoi(fgets(buffer, 100, stdin)));
-            }
-
-            string_drop(&s);
-
-        }
-
-    }
-
-#pragma endregion
-
-int main() { 
-
-    String s = string_from("asfasf");
-    printf("%s\n", s.content);
-
+    string_drop(&from);
     return 0; 
 
 }

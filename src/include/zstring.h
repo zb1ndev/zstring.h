@@ -77,7 +77,7 @@
      * @param format The format in which you want your String to be formed.
      * @param __VA_ARGS__ The items specifified by the specifiers in ```format```.
      * @returns A String with the provided format as it's content.
-     * @note Implemented specifiers : ```%%```, ```%s```, ```%d```, ```%u```.
+     * @note Implemented specifiers : ```%%```, ```%s```, ```%d```, ```%u```, ```%f```.
      */
     String string_from_format(const char* format, ...);
 
@@ -375,9 +375,8 @@
         }
 
         char* buffer = (char*)malloc(index+1);
-
-        for (size_t i = 0; i < index+1; i++)
-            buffer[i] = ptr[i];
+        memcpy(buffer, ptr, index);
+        
         buffer[index+1] = '\0';
 
         return string_from(buffer);
