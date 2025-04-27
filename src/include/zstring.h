@@ -31,6 +31,8 @@
 #if !defined(Z_STRING_H)
 #define  Z_STRING_H
 
+    #include <stdio.h>      // printf @ string_from_format | error checking
+
     #include <stdlib.h>     // realloc
     #include <string.h>     // memcpy
     #include <stdarg.h>     // va_args
