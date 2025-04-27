@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "zstring.h": "c"
+        "zstring.h": "c",
+        "type_traits": "c"
     }
 }
