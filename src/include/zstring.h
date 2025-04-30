@@ -1,4 +1,4 @@
-/* zstring.h - v1.2.4 - MIT License - https://github.com/zb1ndev/zstring.h 
+/* zstring.h - v1.3.1 - MIT License - https://github.com/zb1ndev/zstring.h 
 
     MIT License
     Copyright (c) 2025 Joel Zbinden
@@ -26,7 +26,7 @@
     - Re-wrote most functions 
     - Verfied Memory Safety
 
-    Version 1.3.4 Change-Log :
+    Version 1.3.1 Change-Log :
     - Added string_to_bytes
 
 */
